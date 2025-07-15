@@ -1,2 +1,2 @@
 ## Scratchy-LLM
-**I try to build and finetune Language Models and Agents.**
+**I build & fine-tune Language Models—plus Agents.**
