@@ -1,0 +1,43 @@
+CREATE TABLE employees (
+    employee_id INT,
+    name VARCHAR,
+    department VARCHAR,
+    salary DECIMAL
+);
+
+Questions:
+
+List all employees in the 'Engineering' department.
+
+What is the highest salary?
+
+How many departments are there?
+
+
+
+########################################################################
+
+
+
+CREATE TABLE customers (
+    customer_id INT,
+    name VARCHAR,
+    email VARCHAR
+);
+
+CREATE TABLE orders (
+    order_id INT,
+    customer_id INT,
+    order_date DATE,
+    amount DECIMAL
+);
+
+
+Questions:
+
+What are the names and emails of customers who placed an order?
+
+How many orders did each customer place?
+
+What is the total amount spent by each customer?
+
