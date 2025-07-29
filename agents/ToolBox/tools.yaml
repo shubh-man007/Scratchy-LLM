@@ -1,0 +1,72 @@
+sources:
+  my-sqlite-source:
+    kind: "sqlite"
+    database: "hotels.db"
+
+tools:
+  search-hotels-by-name:
+    kind: sqlite-sql
+    source: my-sqlite-source
+    description: Search for hotels based on name.
+    parameters:
+      - name: name
+        type: string
+        description: The name of the hotel.
+    statement: SELECT * FROM hotels WHERE name LIKE '%' || ? || '%';
+
+  search-hotels-by-location:
+    kind: sqlite-sql
+    source: my-sqlite-source
+    description: Search for hotels based on location.
+    parameters:
+      - name: location
+        type: string
+        description: The location of the hotel.
+    statement: SELECT * FROM hotels WHERE location LIKE '%' || ? || '%';
+
+  book-hotel:
+    kind: sqlite-sql
+    source: my-sqlite-source
+    description: Book a hotel by its ID.
+    parameters:
+      - name: hotel_id
+        type: string
+        description: The ID of the hotel to book.
+    statement: UPDATE hotels SET booked = 1 WHERE id = ?;
+
+  update-hotel:
+    kind: sqlite-sql
+    source: my-sqlite-source
+    description: Update a hotel's check-in and check-out dates by its ID.
+    parameters:
+      - name: hotel_id
+        type: string
+        description: The ID of the hotel to update.
+      - name: checkin_date
+        type: string
+        description: The new check-in date.
+      - name: checkout_date
+        type: string
+        description: The new check-out date.
+    statement: >-
+      UPDATE hotels
+      SET checkin_date = ?, checkout_date = ?
+      WHERE id = ?;
+
+  cancel-hotel:
+    kind: sqlite-sql
+    source: my-sqlite-source
+    description: Cancel a hotel booking by its ID.
+    parameters:
+      - name: hotel_id
+        type: string
+        description: The ID of the hotel to cancel.
+    statement: UPDATE hotels SET booked = 0 WHERE id = ?;
+
+toolsets:
+  my-toolset:
+    - search-hotels-by-name
+    - search-hotels-by-location
+    - book-hotel
+    - update-hotel
+    - cancel-hotel
