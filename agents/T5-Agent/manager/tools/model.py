@@ -1,4 +1,6 @@
 import os
+import sqlite3
+from typing import Optional
 import torch
 from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
 from google.adk.tools.tool_context import ToolContext
@@ -127,4 +129,149 @@ Answer:
         return {
             "status": "error",
             "message": f"Failed to generate SQL query: {str(e)}"
+        }
+
+
+def review_database_schema(
+    db_path: str,
+    tool_context: ToolContext,
+    table_name: Optional[str] = None
+) -> dict:
+    """
+    Retrieves the database schema for either:
+    - all tables in the database (default), or
+    - a specific table (if `table_name` is provided).
+
+    Args:
+        db_path (str): Path to the SQLite database file.
+        tool_context (ToolContext): Agent's tool context for state tracking.
+        table_name (Optional[str]): Name of a specific table to review (default None).
+
+    Returns:
+        dict: Schema information.
+              Example:
+              {
+                  "status": "success",
+                  "schema": "CREATE TABLE ..."
+              }
+    """
+    try:
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+
+        if table_name:
+            cursor.execute(
+                "SELECT sql FROM sqlite_master WHERE type='table' AND name=?;",
+                (table_name,)
+            )
+            result = cursor.fetchone()
+            if result is None:
+                return {
+                    "status": "error",
+                    "message": f"Table '{table_name}' not found in database."
+                }
+            schema = result[0]
+        else:
+            cursor.execute(
+                "SELECT name, sql FROM sqlite_master WHERE type='table';"
+            )
+            rows = cursor.fetchall()
+            if not rows:
+                return {
+                    "status": "error",
+                    "message": "No tables found in the database."
+                }
+            schema = "\n\n".join(
+                [f"-- {name} --\n{sql}" for name, sql in rows if sql]
+            )
+
+        conn.close()
+        tool_context.state["last_schema"] = schema
+
+        return {
+            "status": "success",
+            "schema": schema
+        }
+
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Failed to retrieve schema: {str(e)}"
+        }
+
+
+def list_tables(
+    db_path: str,
+    tool_context: ToolContext
+) -> dict:
+    """
+    Lists all table names in the database.
+
+    Args:
+        db_path (str): Path to the SQLite database file.
+        tool_context (ToolContext): Agent's tool context for state tracking.
+
+    Returns:
+        dict: Table list.
+    """
+    try:
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
+        tables = [row[0] for row in cursor.fetchall()]
+        conn.close()
+
+        tool_context.state["last_table_list"] = tables
+
+        return {
+            "status": "success",
+            "tables": tables
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Failed to list tables: {str(e)}"
+        }
+
+
+def preview_table_data(
+    db_path: str,
+    table_name: str,
+    limit: int,
+    tool_context: ToolContext
+) -> dict:
+    """
+    Retrieves the first few rows from a table.
+
+    Args:
+        db_path (str): Path to the SQLite database file.
+        table_name (str): Name of the table to preview.
+        limit (int): Number of rows to retrieve.
+        tool_context (ToolContext): Agent's tool context for state tracking.
+
+    Returns:
+        dict: Preview rows.
+    """
+    try:
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+        cursor.execute(f"SELECT * FROM {table_name} LIMIT ?;", (limit,))
+        rows = cursor.fetchall()
+        columns = [description[0] for description in cursor.description]
+        conn.close()
+
+        preview = {
+            "columns": columns,
+            "rows": rows
+        }
+        tool_context.state["last_table_preview"] = preview
+
+        return {
+            "status": "success",
+            "preview": preview
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Failed to preview table '{table_name}': {str(e)}"
         }
