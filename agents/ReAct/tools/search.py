@@ -23,6 +23,7 @@ import logging
 import os
 from tavily import TavilyClient
 from .tools import Tool
+from typing import Union, Dict
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -59,3 +60,14 @@ class TavilySearchTool(Tool):
         response = self.client.search(query=query, max_results=MAX_RESULTS)
         clean_results = self.clean_results(response)
         return ";".join(str(result) for result in clean_results)
+    
+    # According to our tool definition.
+    def run(self, input: Union[str, Dict[str, str]]) -> Dict[str, str]:
+        if isinstance(input, dict):
+            query = input.get("query", "")
+        else:
+            query = input
+        
+        response = self.client.search(query=query, max_results=MAX_RESULTS)
+        clean_results = self.clean_results(response)
+        return {"results": clean_results, "query": query}
