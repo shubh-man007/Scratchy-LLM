@@ -53,14 +53,18 @@ class OpenAIClient:
         response = self.client.chat.completions.create(model=self.model, messages=message, stop=stop)
         return response.choices[0].message.content
     
+    def generate(self, query: Union[str, List[Dict[str, str]]], system_prompt: str = "", state: State = None, stop: List[str] = []) -> str:
+        """Alias for invoke method for compatibility."""
+        return self.invoke(query, system_prompt, state, stop)
+    
 
-class ClaudeClient:
+class AnthropicClient:
     def __init__(self, model : str = "claude-3-sonnet-20240229"):
         ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
         self.client = Anthropic(api_key=ANTHROPIC_API_KEY)
         self.model = model
 
-    def invoke(self, 
+    def generate(self, 
                query : Union[str, List[Dict[str, str]]], 
                system_prompt : str = "", 
                state : State = None, 
@@ -68,3 +72,12 @@ class ClaudeClient:
         message = MessageClaude(query, system_prompt, state)
         response = self.client.messages.create(model=self.model, max_tokens=2000, messages=message, stop=stop)
         return response.content[0].text
+
+
+def get_client(model_name: str):
+    if "gpt" in model_name.lower():
+        return OpenAIClient(model_name)
+    elif "claude" in model_name.lower():
+        return AnthropicClient(model_name)
+    else:
+        return OpenAIClient(model_name)
