@@ -1,0 +1,4 @@
+fastapi # use fastapi[standard] for using fastapi CLI.
+slowapi
+uvicorn[standard]
+requests
